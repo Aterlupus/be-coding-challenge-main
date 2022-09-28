@@ -22,7 +22,7 @@ class ImportLogsConsoleCommand extends Command
 {
     private const LOG_ENTRY_REGEX = '#(\S*) - - \[(.*)\] \"(\S*) (\S*) (\S*)\" (\d*)#';
 
-    private $processedLinesCount = 0;
+    private int $processedLinesCount = 0;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
