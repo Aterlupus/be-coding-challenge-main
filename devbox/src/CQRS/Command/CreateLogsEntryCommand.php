@@ -16,7 +16,7 @@ class CreateLogsEntryCommand implements CommandInterface
         private readonly string $method,
         private readonly string $uri,
         private readonly string $protocolVersion,
-        private readonly int $responseCode
+        private readonly int $statusCode
     ) {}
 
     public function getLogsImportUuid(): Uuid
@@ -49,8 +49,8 @@ class CreateLogsEntryCommand implements CommandInterface
         return $this->protocolVersion;
     }
 
-    public function getResponseCode(): int
+    public function getStatusCode(): int
     {
-        return $this->responseCode;
+        return $this->statusCode;
     }
 }

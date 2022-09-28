@@ -20,7 +20,7 @@ class CreateLogsEntryCommandHandler extends AbstractCommandHandler
         $logsEntry->setMethod($command->getMethod());
         $logsEntry->setUri($command->getUri());
         $logsEntry->setProtocolVersion($command->getProtocolVersion());
-        $logsEntry->setStatusCode($command->getResponseCode());
+        $logsEntry->setStatusCode($command->getStatusCode());
         $logsEntry->setLogsImport($this->getLogsImport($command->getLogsImportUuid()));
 
         $this->saveEntity($logsEntry);
