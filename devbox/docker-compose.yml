@@ -47,6 +47,17 @@ services:
         volumes:
             - database-volume:/var/lib/mysql
 
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: devbox-phpmyadmin
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+        ports:
+            - 8012:80
+        links:
+            - mysql
+
 volumes:
     database-volume:
         driver: "local"
