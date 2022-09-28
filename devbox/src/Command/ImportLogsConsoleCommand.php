@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Core\File\FileHandler;
-use App\CQRS\Command\CreateLogsEntryCommand;
 use App\CQRS\Command\CreateLogsImportCommand;
+use App\Entity\LogsEntry;
 use App\Entity\LogsImport;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -21,6 +21,8 @@ use Symfony\Component\Uid\Uuid;
 class ImportLogsConsoleCommand extends Command
 {
     private const LOG_ENTRY_REGEX = '#(\S*) - - \[(.*)\] \"(\S*) (\S*) (\S*)\" (\d*)#';
+
+    private const BATCH_SIZE = 1000;
 
     private int $processedLinesCount = 0;
 
@@ -39,7 +41,6 @@ class ImportLogsConsoleCommand extends Command
             ->addArgument('filepath', InputArgument::REQUIRED, 'Name of the logs file store in "logs" directory');
     }
 
-    //TODO: flush batches
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $stopwatch = (new Stopwatch)->start('');
@@ -65,7 +66,17 @@ class ImportLogsConsoleCommand extends Command
             if (0 !== strlen($line)) {
                 $this->storeLogLine($logsImport->getUuid(), $line);
                 $this->processedLinesCount++;
+                $this->flushBatch();
             }
+        }
+
+        $this->entityManager->flush();
+    }
+
+    private function flushBatch()
+    {
+        if (0 === $this->processedLinesCount % self::BATCH_SIZE) {
+            $this->entityManager->flush();
         }
     }
 
@@ -92,18 +103,40 @@ class ImportLogsConsoleCommand extends Command
             $method,
             $uri,
             $protocolVersion,
-            $responseCode
+            $statusCode
         ) = self::getParsedLogLine($line);
 
-        $this->commandBus->dispatch(new CreateLogsEntryCommand(
+        $this->persistLogsEntry(
             $logsImportUuid,
             $serviceName,
             new DateTime($dateTimeString),
             $method,
             $uri,
             $protocolVersion,
-            (int) $responseCode
-        ));
+            (int) $statusCode
+        );
+    }
+
+    private function persistLogsEntry(
+        Uuid $logsImportUuid,
+        string $serviceName,
+        DateTime $dateTime,
+        string $method,
+        string $uri,
+        string $protocolVersion,
+        int $statusCode
+    ): void {
+        $logsEntry = new LogsEntry;
+
+        $logsEntry->setServiceName($serviceName);
+        $logsEntry->setDateTime($dateTime);
+        $logsEntry->setMethod($method);
+        $logsEntry->setUri($uri);
+        $logsEntry->setProtocolVersion($protocolVersion);
+        $logsEntry->setStatusCode($statusCode);
+        $logsEntry->setLogsImport($this->getLogsImport(['uuid' => $logsImportUuid]));
+
+        $this->entityManager->persist($logsEntry);
     }
 
     private static function getParsedLogLine(string $line): array

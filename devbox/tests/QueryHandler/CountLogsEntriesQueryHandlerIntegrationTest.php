@@ -102,21 +102,21 @@ class CountLogsEntriesQueryHandlerIntegrationTest extends KernelTestCase
         return $logsEntry1;
     }
 
-    public function testItGetsCountFilteredByResponseCode()
+    public function testItGetsCountFilteredByStatusCode()
     {
         $logsImport = $this->entityGenerator->getLogsImport();
 
-        $this->getLogsEntryWithResponseCode($logsImport, 200);
-        $this->getLogsEntryWithResponseCode($logsImport, 200);
+        $this->getLogsEntryWithStatusCode($logsImport, 200);
+        $this->getLogsEntryWithStatusCode($logsImport, 200);
 
-        $this->getLogsEntryWithResponseCode($logsImport, 204);
-        $this->getLogsEntryWithResponseCode($logsImport, 204);
-        $this->getLogsEntryWithResponseCode($logsImport, 204);
+        $this->getLogsEntryWithStatusCode($logsImport, 204);
+        $this->getLogsEntryWithStatusCode($logsImport, 204);
+        $this->getLogsEntryWithStatusCode($logsImport, 204);
 
-        $this->getLogsEntryWithResponseCode($logsImport, 404);
-        $this->getLogsEntryWithResponseCode($logsImport, 404);
-        $this->getLogsEntryWithResponseCode($logsImport, 404);
-        $this->getLogsEntryWithResponseCode($logsImport, 404);
+        $this->getLogsEntryWithStatusCode($logsImport, 404);
+        $this->getLogsEntryWithStatusCode($logsImport, 404);
+        $this->getLogsEntryWithStatusCode($logsImport, 404);
+        $this->getLogsEntryWithStatusCode($logsImport, 404);
 
         $this->entityManager->flush();
 
@@ -125,7 +125,7 @@ class CountLogsEntriesQueryHandlerIntegrationTest extends KernelTestCase
         self::assertEquals(4, $this->dispatchQuery(new LogsEntriesCountQuery(statusCode: 404)));
     }
 
-    private function getLogsEntryWithResponseCode(LogsImport $logsImport, int $statusCode): LogsEntry
+    private function getLogsEntryWithStatusCode(LogsImport $logsImport, int $statusCode): LogsEntry
     {
         $logsEntry1 = $this->entityGenerator->getLogsEntry($logsImport);
         $logsEntry1->setStatusCode($statusCode);
