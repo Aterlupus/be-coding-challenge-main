@@ -5,9 +5,10 @@ namespace App\Controller;
 
 use App\Core\CQRS\QueryInterface;
 use App\Core\DateTime\DateTimeValidator;
+use App\Core\Response\BadRequestResponse;
+use App\Core\Response\SuccessResponse;
 use App\CQRS\Query\LogsEntriesCountQuery;
 use DateTime;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -29,15 +30,15 @@ class LogsController
         $statusCode = $request->get('statusCode');
 
         if (null !== $serviceNames && false === is_array($serviceNames)) {
-            return new JsonResponse(['error' => 'serviceNames parameter value must be an array'], Response::HTTP_BAD_REQUEST);
+            return new BadRequestResponse(['error' => 'serviceNames parameter value must be an array']);
         }
 
         if (null !== $startDate && false === DateTimeValidator::isValid($startDate)) {
-            return new JsonResponse(['error' => 'Invalid startDate parameter value'], Response::HTTP_BAD_REQUEST);
+            return new BadRequestResponse(['error' => 'Invalid startDate parameter value']);
         }
 
         if (null !== $endDate && false === DateTimeValidator::isValid($endDate)) {
-            return new JsonResponse(['error' => 'Invalid endDate parameter value'], Response::HTTP_BAD_REQUEST);
+            return new BadRequestResponse(['error' => 'Invalid endDate parameter value']);
         }
 
         $result = $this->dispatchQuery(new LogsEntriesCountQuery(
@@ -47,7 +48,7 @@ class LogsController
             null !== $statusCode ? (int) $statusCode : null,
         ));
 
-        return new JsonResponse(['counter' => $result]);
+        return new SuccessResponse(['counter' => $result]);
     }
 
     //TODO: Abstract into dedicated QueryBus
