@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Core\CQRS\QueryInterface;
+use App\Core\DateTime\DateTimeValidator;
 use App\CQRS\Query\LogsEntriesCountQuery;
 use DateTime;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,9 +16,9 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class LogsController
 {
-    public function __construct(private readonly MessageBusInterface $queryBus)
-    {
-    }
+    public function __construct(
+        private readonly MessageBusInterface $queryBus
+    ) {}
 
     #[Route('/count', methods: ['GET'])]
     public function count(Request $request): Response
@@ -31,11 +32,11 @@ class LogsController
             return new JsonResponse(['error' => 'serviceNames parameter value must be an array'], Response::HTTP_BAD_REQUEST);
         }
 
-        if (null !== $startDate && false === self::isValidDate($startDate)) {
+        if (null !== $startDate && false === DateTimeValidator::isValid($startDate)) {
             return new JsonResponse(['error' => 'Invalid startDate parameter value'], Response::HTTP_BAD_REQUEST);
         }
 
-        if (null !== $endDate && false === self::isValidDate($endDate)) {
+        if (null !== $endDate && false === DateTimeValidator::isValid($endDate)) {
             return new JsonResponse(['error' => 'Invalid endDate parameter value'], Response::HTTP_BAD_REQUEST);
         }
 
@@ -47,16 +48,6 @@ class LogsController
         ));
 
         return new JsonResponse(['counter' => $result]);
-    }
-
-    private static function isValidDate(?string $date, string $format = 'Y-m-d'): bool
-    {
-        if (null === $date) {
-            return true;
-        } else {
-            $dateTime = DateTime::createFromFormat($format, $date);
-            return $dateTime && $dateTime->format($format) === $date;
-        }
     }
 
     //TODO: Abstract into dedicated QueryBus

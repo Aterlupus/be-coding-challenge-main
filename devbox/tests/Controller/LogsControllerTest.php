@@ -119,6 +119,20 @@ class LogsControllerTest extends WebTestCase
         self::assertEquals(0, $responseJson['counter']);
     }
 
+    public function testItAcceptsDateAsStartDate()
+    {
+        $this->client->request('GET', self::COUNT_ENDPOINT, ['startDate' => '2022-01-01']);
+
+        self::assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testItAcceptsDateTimeAsStartDate()
+    {
+        $this->client->request('GET', self::COUNT_ENDPOINT, ['startDate' => '2022-01-01T12:34:56+00:00']);
+
+        self::assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
     public function testItFailsOnInvalidStartDateFormat()
     {
         $this->client->request('GET', self::COUNT_ENDPOINT, ['startDate' => 'xxx']);
