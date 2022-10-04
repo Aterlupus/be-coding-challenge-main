@@ -10,6 +10,8 @@ use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\Fixtures\EntityGenerator;
+use Tests\Fixtures\LogsFixtures;
 
 class ImportLogsConsoleCommandIntegrationTest extends KernelTestCase
 {
@@ -24,17 +26,39 @@ class ImportLogsConsoleCommandIntegrationTest extends KernelTestCase
 
     public function testItImportsLogsFileToDatabase()
     {
+        $this->clearTestEntities();
         $commandObject = new ImportLogsConsoleCommand($this->entityManager, $this->getContainer()->get('command.bus'));
         $commandTester = $this->getCommandTester($commandObject);
 
-        self::assertEquals(0, $this->entityManager->getRepository(LogsEntry::class)->count([]));
+        self::assertEquals(0, $this->getLogsEntryCount());
 
         $commandTester->execute(['filepath' => 'logs/logs.txt']);
 
-        self::assertEquals(20, $this->entityManager->getRepository(LogsEntry::class)->count([]));
-        $this->entityManager->getConnection()->prepare('DELETE FROM logs_entry WHERE 1=1')->executeStatement(); //TODO: Discover why beginTransaction/rollback method doesn't work and replace with safer solution
-        $this->entityManager->getConnection()->prepare('DELETE FROM logs_import WHERE 1=1')->executeStatement();
+        self::assertEquals(20, $this->getLogsEntryCount());
+        $this->clearTestEntities();
     }
+
+    public function testItResumesImportOfLogsFileToDatabase()
+    {
+        $this->clearTestEntities();
+        $commandObject = new ImportLogsConsoleCommand($this->entityManager, $this->getContainer()->get('command.bus'));
+        $commandTester = $this->getCommandTester($commandObject);
+
+        $fixtures = new LogsFixtures(new EntityGenerator($this->entityManager));
+        $fixtures->setLogsImportFilepath('logs/logs.txt');
+        $fixtures->load($this->entityManager);
+
+        self::assertEquals(10, $this->getLogsEntryCount());
+
+        $commandTester->execute(['filepath' => 'logs/logs.txt']);
+
+        self::assertEquals(20, $this->getLogsEntryCount());
+        $this->clearTestEntities();
+    }
+
+    /*
+     * Helpers
+     */
 
     private function getCommandTester(
         Command $commandObject,
@@ -49,5 +73,24 @@ class ImportLogsConsoleCommandIntegrationTest extends KernelTestCase
         $commandTester->setInputs($inputs);
 
         return $commandTester;
+    }
+
+    private function getLogsEntryCount(array $criteria = []): int
+    {
+        return $this->entityManager->getRepository(LogsEntry::class)->count($criteria);
+    }
+
+    /**
+     * TODO: Discover why beginTransaction/rollback method doesn't work and replace with safer solution
+     */
+    private function clearTestEntities(): void
+    {
+        $this->truncateTable('logs_entry');
+        $this->truncateTable('logs_import');
+    }
+
+    private function truncateTable(string $tableName): void
+    {
+        $this->entityManager->getConnection()->prepare(sprintf('DELETE FROM %s WHERE 1=1', $tableName))->executeStatement();
     }
 }
