@@ -7,7 +7,7 @@ namespace App\Controller;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class HealthCheckController
+class HealthCheckController extends AbstractController
 {
     #[Route('/healthz', methods: ['GET'])]
     public function index(): Response
