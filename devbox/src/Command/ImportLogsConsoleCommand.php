@@ -3,13 +3,10 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Core\File\FileHandler;
 use App\CQRS\Command\CreateLogsImportCommand;
-use App\Entity\LogsEntry;
+use App\CQRS\Command\ProcessLogsFileCommand;
 use App\Entity\LogsImport;
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
-use Iterator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,12 +17,6 @@ use Symfony\Component\Uid\Uuid;
 
 class ImportLogsConsoleCommand extends Command
 {
-    private const LOG_ENTRY_REGEX = '#(\S*) - - \[(.*)\] \"(\S*) (\S*) (\S*)\" (\d*)#';
-
-    private const BATCH_SIZE = 1000;
-
-    private int $processedLinesCount = 0;
-
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly MessageBusInterface $commandBus
@@ -55,94 +46,9 @@ class ImportLogsConsoleCommand extends Command
         $this->processLogsFile($logsImport, $filepath);
 
         $stopwatch->stop();
-        $output->writeln(sprintf('%d lines processed in "%s s"', $this->processedLinesCount, $stopwatch->getEndTime() / 1000));
+        $output->writeln(sprintf('%d lines processed in "%s s"', $this->getLogsImportLinesCountDifference($logsImport), $stopwatch->getEndTime() / 1000));
 
         return 0;
-    }
-
-    private function processLogsFile(LogsImport $logsImport, string $filepath): void
-    {
-        foreach (self::getLogFileIterator($filepath, self::getLastReadLine($logsImport)) as $line) {
-            if (0 !== strlen($line)) {
-                $this->storeLogLine($logsImport->getUuid(), $line);
-                $this->processedLinesCount++;
-                $this->flushBatch();
-            }
-        }
-
-        $this->entityManager->flush();
-    }
-
-    private function flushBatch()
-    {
-        if (0 === $this->processedLinesCount % self::BATCH_SIZE) {
-            $this->entityManager->flush();
-        }
-    }
-
-    private static function getLastReadLine(?LogsImport $logsImport): int
-    {
-        if (null !== $logsImport) {
-            return $logsImport->getLogsEntries()->count();
-        } else {
-            return 0;
-        }
-    }
-
-    private static function getLogFileIterator(string $filepath, int $lastReadLine): Iterator
-    {
-        return FileHandler::getIterator($filepath, $lastReadLine);
-    }
-
-    private function storeLogLine(Uuid $logsImportUuid, string $line): void
-    {
-        list(
-            $line,
-            $serviceName,
-            $dateTimeString,
-            $method,
-            $uri,
-            $protocolVersion,
-            $statusCode
-        ) = self::getParsedLogLine($line);
-
-        $this->persistLogsEntry(
-            $logsImportUuid,
-            $serviceName,
-            new DateTime($dateTimeString),
-            $method,
-            $uri,
-            $protocolVersion,
-            (int) $statusCode
-        );
-    }
-
-    private function persistLogsEntry(
-        Uuid $logsImportUuid,
-        string $serviceName,
-        DateTime $dateTime,
-        string $method,
-        string $uri,
-        string $protocolVersion,
-        int $statusCode
-    ): void {
-        $logsEntry = new LogsEntry;
-
-        $logsEntry->setServiceName($serviceName);
-        $logsEntry->setDateTime($dateTime);
-        $logsEntry->setMethod($method);
-        $logsEntry->setUri($uri);
-        $logsEntry->setProtocolVersion($protocolVersion);
-        $logsEntry->setStatusCode($statusCode);
-        $logsEntry->setLogsImport($this->getLogsImport(['uuid' => $logsImportUuid]));
-
-        $this->entityManager->persist($logsEntry);
-    }
-
-    private static function getParsedLogLine(string $line): array
-    {
-        preg_match(self::LOG_ENTRY_REGEX, $line, $matches);
-        return $matches;
     }
 
     private function getOrCreateLogsImport(string $filepath): ?LogsImport
@@ -156,6 +62,22 @@ class ImportLogsConsoleCommand extends Command
             $this->commandBus->dispatch(new CreateLogsImportCommand($logsImportUuid, $filepath));
             return $this->getLogsImport(['uuid' => $logsImportUuid]);
         }
+    }
+
+    private function processLogsFile(LogsImport $logsImport, string $filepath): void
+    {
+        $this->commandBus->dispatch(new ProcessLogsFileCommand($logsImport->getUuid(), $filepath));
+    }
+
+    private function getLogsImportLinesCountDifference(LogsImport $logsImport): int
+    {
+        $oldLinesCount = $logsImport->getLogsEntriesCount();
+
+        $newLogsImport = $this->getLogsImport(['id' => $logsImport->getId()]);
+        $this->entityManager->refresh($newLogsImport);
+        $newLinesCounts = $newLogsImport->getLogsEntriesCount();
+
+        return $newLinesCounts - $oldLinesCount;
     }
 
     private function getLogsImport(array $criteria): ?LogsImport

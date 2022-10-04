@@ -67,6 +67,11 @@ class LogsImport
         return $this->logsEntries;
     }
 
+    public function getLogsEntriesCount(): int
+    {
+        return $this->getLogsEntries()->count();
+    }
+
     public function setLogsEntries(Collection $logsEntries): void
     {
         $this->logsEntries = $logsEntries;
