@@ -108,7 +108,7 @@ class ProcessLogsFileCommandHandler extends AbstractCommandHandler
         return $matches;
     }
 
-    private function getLogsImport(array $criteria): ?LogsImport
+    private function getLogsImport(array $criteria = []): ?LogsImport
     {
         return $this->getEntityManager()->getRepository(LogsImport::class)->findOneBy($criteria);
     }

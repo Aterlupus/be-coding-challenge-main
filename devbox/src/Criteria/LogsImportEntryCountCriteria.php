@@ -32,7 +32,7 @@ class LogsImportEntryCountCriteria
         $this->assignStatusCode($request->get('statusCode'));
     }
 
-    private function assignServiceNames(?array $serviceNames): void
+    private function assignServiceNames(mixed $serviceNames): void
     {
         if (null !== $serviceNames && false === is_array($serviceNames)) {
             throw new BadRequestException('serviceNames parameter value must be an array');
@@ -41,7 +41,7 @@ class LogsImportEntryCountCriteria
         }
     }
 
-    private function assignStartDate(?string $startDate): void
+    private function assignStartDate(mixed $startDate): void
     {
         if (self::isDateParameterInvalid($startDate)) {
             throw new BadRequestException('Invalid startDate parameter value');
@@ -50,7 +50,7 @@ class LogsImportEntryCountCriteria
         }
     }
 
-    private function assignEndDate(?string $endDate): void
+    private function assignEndDate(mixed $endDate): void
     {
         if (self::isDateParameterInvalid($endDate)) {
             throw new BadRequestException('Invalid endDate parameter value');
@@ -59,14 +59,14 @@ class LogsImportEntryCountCriteria
         }
     }
 
-    private function assignStatusCode(?string $statusCode): void
+    private function assignStatusCode(mixed $statusCode): void
     {
         $this->statusCode = null !== $statusCode ? (int) $statusCode : null;
     }
 
-    private static function isDateParameterInvalid(?string $dateStr): bool
+    private static function isDateParameterInvalid(mixed $date): bool
     {
-        return null !== $dateStr && false === DateTimeValidator::isValid($dateStr);
+        return null !== $date && (false === is_string($date) || false === DateTimeValidator::isValid($date));
     }
 
     public function getServiceNames(): ?array

@@ -119,11 +119,25 @@ class LogsControllerTest extends WebTestCase
         self::assertEquals(0, $responseJson['counter']);
     }
 
+    public function testItFailsOnNonArrayServiceNames()
+    {
+        $this->client->request('GET', self::COUNT_ENDPOINT, ['serviceNames' => 'abc']);
+
+        self::assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
+    }
+
     public function testItAcceptsDateAsStartDate()
     {
         $this->client->request('GET', self::COUNT_ENDPOINT, ['startDate' => '2022-01-01']);
 
         self::assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode());
+    }
+
+    public function testItFailsGracefullyOnArrayParsedAsStartDate()
+    {
+        $this->client->request('GET', self::COUNT_ENDPOINT, ['startDate' => ['x', 'y']]);
+
+        self::assertEquals(Response::HTTP_BAD_REQUEST, $this->client->getResponse()->getStatusCode());
     }
 
     public function testItAcceptsDateTimeAsStartDate()

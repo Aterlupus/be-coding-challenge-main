@@ -15,7 +15,9 @@ class QueryBus
     public function dispatch(object $message, array $stamps = []): mixed
     {
         $envelope = $this->queryBus->dispatch($message, $stamps);
+        /** @var HandledStamp $stamp */
+        $stamp = $envelope->last(HandledStamp::class);
 
-        return $envelope->last(HandledStamp::class)->getResult();
+        return $stamp->getResult();
     }
 }
