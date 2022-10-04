@@ -5,13 +5,14 @@ namespace App\CQRS\Query;
 
 use App\Core\CQRS\QueryInterface;
 use App\Criteria\LogsImportEntryCountCriteria;
+use DateTime;
 
 class LogsEntriesCountQuery implements QueryInterface
 {
     public function __construct(
         private readonly ?array $servicesNames = null,
-        private readonly ?\DateTime $startDate = null,
-        private readonly ?\DateTime $endDate = null,
+        private readonly ?DateTime $startDate = null,
+        private readonly ?DateTime $endDate = null,
         private readonly ?int $statusCode = null
     ) {}
 
@@ -30,12 +31,12 @@ class LogsEntriesCountQuery implements QueryInterface
         return $this->servicesNames;
     }
 
-    public function getStartDate(): ?\DateTime
+    public function getStartDate(): ?DateTime
     {
         return $this->startDate;
     }
 
-    public function getEndDate(): ?\DateTime
+    public function getEndDate(): ?DateTime
     {
         return $this->endDate;
     }

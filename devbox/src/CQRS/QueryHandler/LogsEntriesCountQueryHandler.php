@@ -6,9 +6,15 @@ namespace App\CQRS\QueryHandler;
 use App\Core\CQRS\AbstractQueryHandler;
 use App\CQRS\Query\LogsEntriesCountQuery;
 use App\Entity\LogsEntry;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\NoResultException;
 
 class LogsEntriesCountQueryHandler extends AbstractQueryHandler
 {
+    /**
+     * @throws NonUniqueResultException
+     * @throws NoResultException
+     */
     public function __invoke(LogsEntriesCountQuery $query): int
     {
         $qb = $this->getEntityManager()->createQueryBuilder()

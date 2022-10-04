@@ -23,7 +23,7 @@ class LogsImport
     #[ORM\Column(type: 'string')]
     private string $filepath;
 
-    #[ORM\OneToMany(targetEntity: LogsEntry::class, mappedBy: 'logsImport', orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'logsImport', targetEntity: LogsEntry::class, orphanRemoval: true)]
     private Collection $logsEntries;
 
 
