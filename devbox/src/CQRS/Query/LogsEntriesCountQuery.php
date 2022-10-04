@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\CQRS\Query;
 
 use App\Core\CQRS\QueryInterface;
+use App\Criteria\LogsImportEntryCountCriteria;
 
 class LogsEntriesCountQuery implements QueryInterface
 {
@@ -13,6 +14,16 @@ class LogsEntriesCountQuery implements QueryInterface
         private readonly ?\DateTime $endDate = null,
         private readonly ?int $statusCode = null
     ) {}
+
+    public static function createFromCriteria(LogsImportEntryCountCriteria $criteria): self
+    {
+        return new self(
+            $criteria->getServiceNames(),
+            $criteria->getStartDate(),
+            $criteria->getEndDate(),
+            $criteria->getStatusCode()
+        );
+    }
 
     public function getServicesNames(): ?array
     {
